@@ -10,7 +10,7 @@ Additionally, every action except for `Generate-Install-ID` will have a `Ironfis
 The following response codes are valid for the server API:
 - `403` - Missing/invalid install ID (this will happen if you do not supply a `Ironfist-Install-ID` header for everything except `Generate-Install-ID`).
 - `5XX` - Server failure. Don't deploy on Christmas Day or Fridays!
-- `400` - Missing/broken action specific stuff or `Ironfist-Version`/`Ironfist-Action`.
+- `400` - Missing/broken action specific stuff or `Ironfist-Version`/`Ironfist-Action` missing.
 
 ## Actions
 
