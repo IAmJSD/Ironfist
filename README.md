@@ -1,5 +1,5 @@
 # Ironfist
-Ironfist is a update distribution, update rollback and user census system.
+Ironfist is an update distribution, update rollback and user census system.
 
 ## How to bundle
 1. Create a folder with your apps contents and `.ironfist.json` named `app_contents` in the root of this folder.
