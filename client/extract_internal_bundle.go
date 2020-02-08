@@ -36,8 +36,10 @@ func ExtractInternalBundle() string {
 
 	// Write the .zip file.
 	ZIPPath := path.Join(FolderPath, B64Encoded+".zip")
-	ioutil.WriteFile(ZIPPath, AppContents, 0700)
-	defer os.Remove(ZIPPath)
+	_ = ioutil.WriteFile(ZIPPath, AppContents, 0700)
+	defer func() {
+		_ = os.Remove(ZIPPath)
+	}()
 
 	// Extract the ZIP file.
 	r, err := zip.OpenReader(ZIPPath)
@@ -55,13 +57,13 @@ func ExtractInternalBundle() string {
 			}
 		}()
 
-		path := filepath.Join(PathCreate, f.Name)
+		p := filepath.Join(PathCreate, f.Name)
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(path, f.Mode())
+			_ = os.MkdirAll(p, f.Mode())
 		} else {
-			os.MkdirAll(filepath.Dir(path), f.Mode())
-			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			_ = os.MkdirAll(filepath.Dir(p), f.Mode())
+			f, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
 				panic(err)
 			}
@@ -77,7 +79,6 @@ func ExtractInternalBundle() string {
 			}
 		}
 	}
-
 	for _, f := range r.File {
 		HandleExtraction(f)
 	}

@@ -97,3 +97,10 @@ Each chunk of the application should be ordered in the array in the order that i
 - `hash` - The hash of the version. We will need this for downloading the update.
 
 **Documentation:** Used to get previous updates from the Ironfist API which is mainly used to roll back updates. This should **NOT** contain releases that have been previously rolled back by the user.
+
+### `Update-Pending`
+**Body:** None required.
+
+**Returns:** JSON boolean repersenting if a update is required.
+
+**Documentation:** Check if a update is pending.

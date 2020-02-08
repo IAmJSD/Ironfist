@@ -41,12 +41,12 @@ func HandleRollback() {
 		HandleRollbackFail()
 		return
 	}
-	l := j.([]interface{})
+	l := j.([]map[string]interface{})
 	if len(l) == 0 {
 		HandleRollbackFail()
 		return
 	}
-	last := l[len(l)-1].(string)
+	last := l[len(l)-1]["hash"].(string)
 
 	// Execute the rollback.
 	println("[IRONFIST] The application crashed! Rolling back to " + last + "!")
@@ -55,5 +55,9 @@ func HandleRollback() {
 		Header("Ironfist-Version", "1.0.0").
 		Header("Ironfist-Install-ID", InstallID).
 		Run()
-	UpDowngradeRelease(last)
+	ok := UpDowngradeRelease(last)
+	if !ok {
+		println("[IRONFIST] Rollback failed. Crashing here.")
+		os.Exit(1)
+	}
 }
