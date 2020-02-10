@@ -34,12 +34,40 @@ func RollbackRequired(ctx *fasthttp.RequestCtx, InstallID string) {
 
 // JoinUpdateChannel is used to join the update channel.
 func JoinUpdateChannel(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle joining update channels!
+	// Get the update channel.
+	var UpdateChannel string
+	err := json.Unmarshal(ctx.Request.Body(), &UpdateChannel)
+	if err != nil {
+		ctx.Response.SetStatusCode(400)
+		ctx.Response.Header.Set("Content-Type", "application/json")
+		ctx.Response.SetBody([]byte("\"Update channel is invalid.\""))
+		return
+	}
+
+	// Join the specific channel.
+	RedisClient.SAdd("u:"+InstallID, UpdateChannel)
+
+	// Set the status to 204.
+	ctx.Response.SetStatusCode(204)
 }
 
 // LeaveUpdateChannel is used to leave the update channel.
 func LeaveUpdateChannel(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle leaving update channels!
+	// Get the update channel.
+	var UpdateChannel string
+	err := json.Unmarshal(ctx.Request.Body(), &UpdateChannel)
+	if err != nil {
+		ctx.Response.SetStatusCode(400)
+		ctx.Response.Header.Set("Content-Type", "application/json")
+		ctx.Response.SetBody([]byte("\"Update channel is invalid.\""))
+		return
+	}
+
+	// Leave the specific channel.
+	RedisClient.SRem("u:"+InstallID, UpdateChannel)
+
+	// Set the status to 204.
+	ctx.Response.SetStatusCode(204)
 }
 
 // GetUpdateChunkInfo is used to get update chunk information.
@@ -64,15 +92,15 @@ func UpdatePending(ctx *fasthttp.RequestCtx, InstallID string) {
 
 // SetVersionHash is used to set the version hash.
 func SetVersionHash(ctx *fasthttp.RequestCtx, InstallID string) {
-	// Get the version hash.
-	var VersionHash string
-	err := json.Unmarshal(ctx.Request.Body(), &VersionHash)
-	if err != nil {
-		ctx.Response.SetStatusCode(400)
-		ctx.Response.Header.Set("Content-Type", "application/json")
-		ctx.Response.SetBody([]byte("\"Version hash is invalid.\""))
-		return
-	}
+		// Get the version hash.
+		var VersionHash string
+		err := json.Unmarshal(ctx.Request.Body(), &VersionHash)
+		if err != nil {
+			ctx.Response.SetStatusCode(400)
+			ctx.Response.Header.Set("Content-Type", "application/json")
+			ctx.Response.SetBody([]byte("\"Version hash is invalid.\""))
+			return
+		}
 
 	// Return a 204.
 	ctx.Response.SetStatusCode(204)
