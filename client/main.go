@@ -12,6 +12,7 @@ func main() {
 	// Set the structuredhttp timeout to 10 seconds.
 	structuredhttp.SetDefaultTimeout(10 * time.Second)
 
+	// Make sure Ironfist is initialised.
 	PathPtr := IsIronfistInitialised()
 	if PathPtr == nil {
 		// The path does not exist - extract the internal contents.

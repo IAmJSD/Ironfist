@@ -12,8 +12,11 @@ import (
 	"strings"
 )
 
-// ExtractInternalBundle is used to extract an internal bundle.
-func ExtractInternalBundle() string {
+// AppContentsHash is the hash of AppContents.
+var AppContentsHash string
+
+// Initialises the hash.
+func init() {
 	// Load the app contents bytes.
 	AppContents := Assets.Bytes("app_contents.zip")
 
@@ -23,19 +26,25 @@ func ExtractInternalBundle() string {
 	for i, v := range HashFixed {
 		Hash[i] = v
 	}
-	B64Encoded := base64.StdEncoding.EncodeToString(Hash)
-	B64Encoded = strings.ReplaceAll(B64Encoded, "/", "_")
-	B64Encoded = strings.ReplaceAll(B64Encoded, "+", "-")
+	AppContentsHash = base64.StdEncoding.EncodeToString(Hash)
+	AppContentsHash = strings.ReplaceAll(AppContentsHash, "/", "_")
+	AppContentsHash = strings.ReplaceAll(AppContentsHash, "+", "-")
+}
+
+// ExtractInternalBundle is used to extract an internal bundle.
+func ExtractInternalBundle() string {
+	// Load the app contents bytes.
+	AppContents := Assets.Bytes("app_contents.zip")
 
 	// Make the directory for the folder.
-	PathCreate := path.Join(FolderPath, B64Encoded)
+	PathCreate := path.Join(FolderPath, AppContentsHash)
 	err := os.Mkdir(PathCreate, 0700)
 	if err != nil {
 		panic(err)
 	}
 
 	// Write the .zip file.
-	ZIPPath := path.Join(FolderPath, B64Encoded+".zip")
+	ZIPPath := path.Join(FolderPath, AppContentsHash+".zip")
 	_ = ioutil.WriteFile(ZIPPath, AppContents, 0700)
 	defer func() {
 		_ = os.Remove(ZIPPath)
@@ -84,7 +93,11 @@ func ExtractInternalBundle() string {
 	}
 
 	// Write the version.
-	err = ioutil.WriteFile(path.Join(FolderPath, "version"), []byte(B64Encoded), 0666)
+	err = ioutil.WriteFile(path.Join(FolderPath, "version"), []byte(AppContentsHash), 0666)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile(path.Join(FolderPath, "launcher_version"), []byte(AppContentsHash), 0666)
 	if err != nil {
 		panic(err)
 	}
