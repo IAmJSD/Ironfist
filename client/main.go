@@ -27,8 +27,10 @@ func main() {
 	// Handle the user census.
 	go HandleUserCensus()
 
-	// Start the HTTP server for handling Ironfist requests.
-	StartHTTPServer()
+	// Start the TCP server for handling Ironfist requests.
+	if InstallID != "" {
+		StartTCPServer()
+	}
 
 	// Launch the application.
 	LaunchApplication(*PathPtr)

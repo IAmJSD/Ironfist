@@ -49,7 +49,7 @@ func LaunchApplication(Path string) {
 			Env[i] = "PATH=" + Path
 		}
 	}
-	Env = append(Env, "IRONFIST_URL="+URL)
+	Env = append(Env, "IRONFIST_HOSTNAME="+Hostname, "IRONFIST_KEY="+ApplicationKey)
 	pid, err := syscall.ForkExec(args[0], args, &syscall.ProcAttr{
 		Env: Env,
 		Dir: Path,
