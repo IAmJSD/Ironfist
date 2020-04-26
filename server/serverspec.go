@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// TODO: Add endpoint to edit redis key "c:user_census_sleep"
 // DefaultUserCensusSleep is the default time that user census's sleep.
 var DefaultUserCensusSleep = 10
 
@@ -92,15 +91,15 @@ func UpdatePending(ctx *fasthttp.RequestCtx, InstallID string) {
 
 // SetVersionHash is used to set the version hash.
 func SetVersionHash(ctx *fasthttp.RequestCtx, InstallID string) {
-		// Get the version hash.
-		var VersionHash string
-		err := json.Unmarshal(ctx.Request.Body(), &VersionHash)
-		if err != nil {
-			ctx.Response.SetStatusCode(400)
-			ctx.Response.Header.Set("Content-Type", "application/json")
-			ctx.Response.SetBody([]byte("\"Version hash is invalid.\""))
-			return
-		}
+	// Get the version hash.
+	var VersionHash string
+	err := json.Unmarshal(ctx.Request.Body(), &VersionHash)
+	if err != nil {
+		ctx.Response.SetStatusCode(400)
+		ctx.Response.Header.Set("Content-Type", "application/json")
+		ctx.Response.SetBody([]byte("\"Version hash is invalid.\""))
+		return
+	}
 
 	// Return a 204.
 	ctx.Response.SetStatusCode(204)
