@@ -6,8 +6,8 @@ Note that whilst this does not support sharding, I'm not overly concerned. Go is
 The following routes are supported:
 - `/len` (GET) - Returns a JSON integer containing the length of the database.
 - `/push` (POST) - Pushes a item to the database. The body of this request should be a JSON object which contains a `update_hash` attribute. This will return a 204 on success.
-- `/before/<hash>?<filters>` (GET) - Gets updates before a specific hash. This will be a JSON array of objects. Filters should be key -> JSON serialized/URL encoded value.
-- `/after/<hash>?<filters>` (GET) - Gets updates after a specific hash. This will be a JSON array of objects. Filters should be key -> JSON serialized/URL encoded value.
+- `/before/<hash>?<filters>` (GET) - Gets updates before a specific hash. This will be a JSON array of objects. Filters should be key -> JSON serialized/URL encoded value. If an array is given for the value, it will check for anything with the values of the array in.
+- `/after/<hash>?<filters>` (GET) - Gets updates after a specific hash. This will be a JSON array of objects. Filters should be key -> JSON serialized/URL encoded value. If an array is given for the value, it will check for anything with the values of the array in.
 - `/latest` (GET) - Get the latest version hash. This will be a JSON string with the latest version.
 - `/rm/<hash>` (GET) - Removes an update. This will return a 204 on success.
 - `/info/<hash>` (GET) - Returns the JSON object of a specific hash.

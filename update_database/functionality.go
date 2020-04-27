@@ -100,9 +100,20 @@ func updatesBefore(UpdateHash string, Params map[string]interface{}) ([]map[stri
 		item := db.Updates[i]
 		b := false
 		for k, v := range Params {
-			if v != item[k] {
+			a, ok := v.([]interface{})
+			if ok {
 				b = true
-				break
+				for _, x := range a {
+					if x == item[k] {
+						b = false
+						break
+					}
+				}
+			} else {
+				if v != item[k] {
+					b = true
+					break
+				}
 			}
 		}
 		if b {
@@ -137,9 +148,20 @@ func updatesAfter(UpdateHash string, Params map[string]interface{}) ([]map[strin
 		item := db.Updates[i]
 		b := false
 		for k, v := range Params {
-			if v != item[k] {
+			a, ok := v.([]interface{})
+			if ok {
 				b = true
-				break
+				for _, x := range a {
+					if x == item[k] {
+						b = false
+						break
+					}
+				}
+			} else {
+				if v != item[k] {
+					b = true
+					break
+				}
 			}
 		}
 		if b {
