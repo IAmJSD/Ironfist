@@ -26,9 +26,28 @@ var RequestActions = map[string]func(ctx *fasthttp.RequestCtx){
 	"Update-Pending":         InstallIDMiddleware(UpdatePending),
 }
 
+func sendClientError(ctx *fasthttp.RequestCtx, err error) {
+	ctx.Response.SetStatusCode(400)
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	b, _ := json.Marshal(err.Error())
+	ctx.Response.SetBody(b)
+}
+
+func sendServerError(ctx *fasthttp.RequestCtx, err error) {
+	ctx.Response.SetStatusCode(500)
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	b, _ := json.Marshal(err.Error())
+	ctx.Response.SetBody(b)
+}
+
 // RollbackRequired is used for the application to be able to rollback.
 func RollbackRequired(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle rollbacks!
+	err := RedisClient.Set("rollback:"+InstallID, "t", 0).Err()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	ctx.Response.SetStatusCode(204)
 }
 
 // JoinUpdateChannel is used to join the update channel.
@@ -70,8 +89,27 @@ func LeaveUpdateChannel(ctx *fasthttp.RequestCtx, InstallID string) {
 }
 
 // GetUpdateChunkInfo is used to get update chunk information.
-func GetUpdateChunkInfo(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle getting update chunks!
+func GetUpdateChunkInfo(ctx *fasthttp.RequestCtx, _ string) {
+	// Get the update hash.
+	var UpdateHash string
+	err := json.Unmarshal(ctx.Request.Body(), &UpdateHash)
+	if err != nil {
+		sendClientError(ctx, err)
+		return
+	}
+	update, err := GetUpdateInfo(UpdateHash)
+	if err != nil {
+		sendClientError(ctx, err)
+		return
+	}
+	b, err := json.Marshal(update.Chunks)
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	ctx.Response.SetStatusCode(200)
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	ctx.Response.SetBody(b)
 }
 
 // GetLatestUpdate is used to get the latest update.
