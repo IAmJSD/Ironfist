@@ -112,6 +112,76 @@ func GetUpdateChunkInfo(ctx *fasthttp.RequestCtx, _ string) {
 	ctx.Response.SetBody(b)
 }
 
+func itemInArray(x string, a []string) bool {
+	for _, v := range a {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
+func getLastUpdate(VersionHash string, BlacklistedUpdates []string, Channels []string) *Update {
+	updates, err := GetUpdatesBeforeAfter(true, VersionHash, Channels)
+	if err != nil {
+		return nil
+	}
+	for i, j := 0, len(updates)-1; i < j; i, j = i+1, j-1 {
+		updates[i], updates[j] = updates[j], updates[i]
+	}
+	for _, v := range updates {
+		if !itemInArray(v.UpdateHash, BlacklistedUpdates) {
+			return &v
+		}
+	}
+	return nil
+}
+
+func getNextUpdate(InstallID string, BlacklistedUpdates []string, Channels []string) *Update {
+	// Get the current version hash.
+	VersionHash, err := RedisClient.Get("h:"+InstallID).Result()
+	if err != nil {
+		return nil
+	}
+
+	// Check the version hash against the latest hash.
+	LatestHash, err := GetLatestHash()
+	if err != nil {
+		return nil
+	}
+
+	// Check if we should rollback.
+	_, err = RedisClient.Get("rollback:"+InstallID).Result()
+	if LatestHash == VersionHash {
+		// Check if we are meant to roll back.
+		if err == nil {
+			// We are not. We can just return no version here.
+			return nil
+		} else {
+			// Hmmmm, check for previous updates. If not, return nothing.
+			return getLastUpdate(VersionHash, BlacklistedUpdates, Channels)
+		}
+	}
+
+	// Ok, try and look ahead for updates.
+	updates, err := GetUpdatesBeforeAfter(false, VersionHash, Channels)
+	if err != nil {
+		return nil
+	}
+	for i, j := 0, len(updates)-1; i < j; i, j = i+1, j-1 {
+		updates[i], updates[j] = updates[j], updates[i]
+	}
+	for _, v := range updates {
+		if !itemInArray(v.UpdateHash, BlacklistedUpdates) {
+			return &v
+		}
+	}
+
+	// Ok, so we don't need to rollback (this is a new version - rollbacks only apply if there's not a newer version than the client).
+	// However, there are no newer updates which have not been blacklisted. We will return nil here.
+	return nil
+}
+
 // GetLatestUpdate is used to get the latest update.
 func GetLatestUpdate(ctx *fasthttp.RequestCtx, InstallID string) {
 	// TODO: Handle getting the latest update!
@@ -124,7 +194,8 @@ func GetPreviousVersions(ctx *fasthttp.RequestCtx, InstallID string) {
 
 // UpdatePending is used to check if updates are pending.
 func UpdatePending(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle checking if updates are pending.
+	// TODO: Handle rollbacks properly (probably in some other functions too fml it's 2am).
+	// TODO: Send the update pending alert as expected.
 }
 
 // SetVersionHash is used to set the version hash.
@@ -138,6 +209,8 @@ func SetVersionHash(ctx *fasthttp.RequestCtx, InstallID string) {
 		ctx.Response.SetBody([]byte("\"Version hash is invalid.\""))
 		return
 	}
+
+	// TODO: If it's a blacklisted release, un-blacklist it.
 
 	// Return a 204.
 	ctx.Response.SetStatusCode(204)
