@@ -49,6 +49,7 @@ func HandleRollback() {
 	last := l[len(l)-1]["hash"].(string)
 
 	// Execute the rollback.
+	// TODO: Only rollback after 5 crashes within 10 mins!
 	println("[IRONFIST] The application crashed! Rolling back to " + last + "!")
 	_, _ = structuredhttp.POST(ConfigInitialised.Endpoint).
 		Header("Ironfist-Action", "Rollback-Required").

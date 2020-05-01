@@ -47,6 +47,16 @@ func RollbackRequired(ctx *fasthttp.RequestCtx, InstallID string) {
 		sendServerError(ctx, err)
 		return
 	}
+	VersionHash, err := RedisClient.Get("h:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	err = RedisClient.SAdd("b:"+InstallID, VersionHash).Err()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
 	ctx.Response.SetStatusCode(204)
 }
 
@@ -137,13 +147,7 @@ func getLastUpdate(VersionHash string, BlacklistedUpdates []string, Channels []s
 	return nil
 }
 
-func getNextUpdate(InstallID string, BlacklistedUpdates []string, Channels []string) *Update {
-	// Get the current version hash.
-	VersionHash, err := RedisClient.Get("h:"+InstallID).Result()
-	if err != nil {
-		return nil
-	}
-
+func getNextUpdate(VersionHash, InstallID string, BlacklistedUpdates []string, Channels []string) *Update {
 	// Check the version hash against the latest hash.
 	LatestHash, err := GetLatestHash()
 	if err != nil {
@@ -184,18 +188,152 @@ func getNextUpdate(InstallID string, BlacklistedUpdates []string, Channels []str
 
 // GetLatestUpdate is used to get the latest update.
 func GetLatestUpdate(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle getting the latest update!
+	// Get the current version hash.
+	VersionHash, err := RedisClient.Get("h:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Get the update channels.
+	Channels, err := RedisClient.SMembers("u:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	Channels = append(Channels, "default")
+
+	// Get all blacklisted updates.
+	BlacklistedUpdates, err := RedisClient.SMembers("b:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Get the latest update.
+	latest := getNextUpdate(VersionHash, InstallID, BlacklistedUpdates, Channels)
+
+	// Serialize the update.
+	var b []byte
+	if latest == nil {
+		b, err = json.Marshal(latest)
+	} else {
+		b, err = json.Marshal(&map[string]interface{}{
+			"name": latest.Name,
+			"version": latest.Version,
+			"changelogs": latest.Changelogs,
+			"hash": latest.UpdateHash,
+		})
+	}
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Send the response.
+	ctx.Response.SetStatusCode(200)
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	ctx.Response.SetBody(b)
 }
 
 // GetPreviousVersions is used to get the previous versions.
 func GetPreviousVersions(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle getting the previous versions!
+	// Get the current version hash.
+	VersionHash, err := RedisClient.Get("h:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Get the update channels.
+	Channels, err := RedisClient.SMembers("u:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	Channels = append(Channels, "default")
+
+	// Get all blacklisted updates.
+	BlacklistedUpdates, err := RedisClient.SMembers("b:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Get the past updates.
+	p, err := GetUpdatesBeforeAfter(true, VersionHash, Channels)
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	past := make([]map[string]interface{}, 0, len(p))
+	for _, v := range p {
+		if !itemInArray(v.UpdateHash, BlacklistedUpdates) {
+			past = append(past, map[string]interface{}{
+				"name": v.Name,
+				"version": v.Version,
+				"changelogs": v.Changelogs,
+				"hash": v.UpdateHash,
+			})
+		}
+	}
+
+	// Serialize the update.
+	b, err := json.Marshal(&past)
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Send the response.
+	ctx.Response.SetStatusCode(200)
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	ctx.Response.SetBody(b)
 }
 
 // UpdatePending is used to check if updates are pending.
 func UpdatePending(ctx *fasthttp.RequestCtx, InstallID string) {
-	// TODO: Handle rollbacks properly (probably in some other functions too fml it's 2am).
-	// TODO: Send the update pending alert as expected.
+	// Get the current version hash.
+	VersionHash, err := RedisClient.Get("h:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Get the update channels.
+	Channels, err := RedisClient.SMembers("u:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+	Channels = append(Channels, "default")
+
+	// Get all blacklisted updates.
+	BlacklistedUpdates, err := RedisClient.SMembers("b:"+InstallID).Result()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Get the latest update.
+	latest := getNextUpdate(VersionHash, InstallID, BlacklistedUpdates, Channels)
+
+	// Serialize the update.
+	var b []byte
+	if latest == nil {
+		b, err = json.Marshal(false)
+	} else {
+		b, err = json.Marshal(false)
+	}
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
+
+	// Send the response.
+	ctx.Response.SetStatusCode(200)
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	ctx.Response.SetBody(b)
 }
 
 // SetVersionHash is used to set the version hash.
@@ -210,7 +348,12 @@ func SetVersionHash(ctx *fasthttp.RequestCtx, InstallID string) {
 		return
 	}
 
-	// TODO: If it's a blacklisted release, un-blacklist it.
+	// If it's a blacklisted release, un-blacklist it.
+	err = RedisClient.SRem("b:"+InstallID, VersionHash).Err()
+	if err != nil {
+		sendServerError(ctx, err)
+		return
+	}
 
 	// Return a 204.
 	ctx.Response.SetStatusCode(204)
@@ -364,5 +507,5 @@ func ServerSpecRequest(ctx *fasthttp.RequestCtx) {
 
 // Initialises the file.
 func init() {
-	Router.POST("/serverspec", ServerSpecRequest)
+	Router.POST("/client", ServerSpecRequest)
 }
