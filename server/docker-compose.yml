@@ -15,7 +15,7 @@ services:
   app:
     build: .
     depends_on:
-      - postgres
+      - redis
     environment:
       REDIS_ADDR: redis
     env_file:
