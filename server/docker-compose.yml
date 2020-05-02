@@ -1,0 +1,27 @@
+version: "3"
+services:
+  caddy:
+    image: "wemakeservices/caddy-docker:latest"
+    volumes:
+      - ./caddy:/root/.caddy
+      - ./Caddyfile:/etc/Caddyfile
+    ports:
+      - "2015:2015"
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+
+  app:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      REDIS_ADDR: redis
+    env_file:
+      - .env
+
+  redis:
+    image: bitnami/redis:latest
+    environment:
+      ALLOW_EMPTY_PASSWORD: yes
