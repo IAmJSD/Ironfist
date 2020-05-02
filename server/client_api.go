@@ -323,7 +323,7 @@ func UpdatePending(ctx *fasthttp.RequestCtx, InstallID string) {
 	if latest == nil {
 		b, err = json.Marshal(false)
 	} else {
-		b, err = json.Marshal(false)
+		b, err = json.Marshal(true)
 	}
 	if err != nil {
 		sendServerError(ctx, err)
@@ -386,7 +386,7 @@ func UserCensus(ctx *fasthttp.RequestCtx, InstallID string) {
 		_ = RedisClient.SAdd("census", InstallID).Err()
 
 		// Create the census item.
-		_ = RedisClient.Set("C:"+InstallID, time.Now().Unix(), time.Duration(Sleep+(Sleep/2))).Err()
+		_ = RedisClient.Set("C:"+InstallID, time.Now().Unix(), time.Duration(Sleep+(Sleep/2)) * time.Second).Err()
 
 		// Wait for the census sleep + census sleep / 2 to check if the user is still using the application.
 		time.Sleep(time.Duration(Sleep+(Sleep/2)) * time.Second)
@@ -469,6 +469,7 @@ func GenerateInstallID(ctx *fasthttp.RequestCtx) {
 	// Insert the install ID.
 	_ = RedisClient.Set("m:"+MachineID, i, 0).String()
 	_ = RedisClient.Set("e:"+i, "y", 0).String()
+	_ = RedisClient.SAdd("installs", i).Err()
 	ctx.Response.SetStatusCode(200)
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	ctx.Response.SetBody([]byte("\"" + i + "\""))
