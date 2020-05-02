@@ -1,12 +1,11 @@
 version: "3"
 services:
   caddy:
-    image: "wemakeservices/caddy-docker:latest"
+    image: "abiosoft/caddy:latest"
     volumes:
       - ./caddy:/root/.caddy
       - ./Caddyfile:/etc/Caddyfile
     ports:
-      - "2015:2015"
       - "80:80"
       - "443:443"
     depends_on:
@@ -17,7 +16,7 @@ services:
     depends_on:
       - redis
     environment:
-      REDIS_ADDR: redis
+      REDIS_ADDR: redis:6379
     env_file:
       - .env
 
