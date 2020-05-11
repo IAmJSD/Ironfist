@@ -13,7 +13,7 @@ var InstallID string
 // EnsureInstallID is used to ensure the install ID has been configured.
 func EnsureInstallID(Path string) {
 	// Attempt to read the file.
-	b, err := ioutil.ReadFile(path.Join(Path, "install_id"))
+	b, err := ioutil.ReadFile(path.Join(FolderPath, "install_id"))
 	if err == nil {
 		InstallID = string(b)
 		return
@@ -52,5 +52,5 @@ func EnsureInstallID(Path string) {
 		return
 	}
 	InstallID = j.(string)
-	_ = ioutil.WriteFile(path.Join(Path, "install_id"), []byte(InstallID), 0666)
+	_ = ioutil.WriteFile(path.Join(FolderPath, "install_id"), []byte(InstallID), 0666)
 }
