@@ -25,4 +25,4 @@ services:
     environment:
       ALLOW_EMPTY_PASSWORD: "yes"
     volumes:
-      - /var/redis-persistence:/bitnami/redis/data
+      - ./redis-persistence:/bitnami/redis/data
