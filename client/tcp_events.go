@@ -32,6 +32,7 @@ func updatePending(conn net.Conn) {
 	r, err := processApplicationRequest([]byte{}, "Update-Pending")
 	if err != nil {
 		_, _ = conn.Write(append([]byte{0x02}, []byte(err.Error())...))
+		return
 	}
 	j, err := r.JSON()
 	if err != nil {
