@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net"
 
 	"github.com/jakemakesstuff/structuredhttp"
@@ -45,7 +46,36 @@ func updatePending(conn net.Conn) {
 	}
 }
 
+func toggleUpdateChannel(join bool) func(conn net.Conn) {
+	return func(conn net.Conn) {
+		b := make([]byte, 250)
+		n, err := conn.Read(b)
+		if err != nil {
+			_, _ = conn.Write(append([]byte{0x02}, []byte(err.Error())...))
+			return
+		}
+		channel := string(b[:n])
+		b, err = json.Marshal(&channel)
+		if err != nil {
+			_, _ = conn.Write(append([]byte{0x02}, []byte(err.Error())...))
+			return
+		}
+		req := "Leave-Update-Channel"
+		if join {
+			req = "Join-Update-Channel"
+		}
+		_, err = processApplicationRequest(b, req)
+		if err != nil {
+			_, _ = conn.Write(append([]byte{0x02}, []byte(err.Error())...))
+			return
+		}
+		_, _ = conn.Write([]byte{0x01})
+	}
+}
+
 var tcpHandlers = map[byte]func(conn net.Conn){
 	0x01: ping,
 	0x02: updatePending,
+	0x03: toggleUpdateChannel(true),
+	0x04: toggleUpdateChannel(false),
 }
