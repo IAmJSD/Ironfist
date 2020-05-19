@@ -35,11 +35,12 @@ func HandleUserCensus() {
 
 	// Handle the user census POST request.
 	for {
-		time.Sleep(time.Second * time.Duration(i))
+		println("[IRONFIST] Sending user census packet.")
 		_, _ = structuredhttp.POST(ConfigInitialised.Endpoint).
 			Header("Ironfist-Action", "User-Census").
 			Header("Ironfist-Version", "1.0.0").
 			Header("Ironfist-Install-ID", InstallID).
 			Run()
+		time.Sleep(time.Second * time.Duration(i))
 	}
 }
