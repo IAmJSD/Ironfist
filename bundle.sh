@@ -12,4 +12,3 @@ else
 fi
 cd ..
 rm -rf __items
-rm ./app_contents.zip
