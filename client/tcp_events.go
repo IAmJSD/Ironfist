@@ -73,9 +73,30 @@ func toggleUpdateChannel(join bool) func(conn net.Conn) {
 	}
 }
 
+func handleUpdate(conn net.Conn) {
+	defer func() { _, _ = conn.Write([]byte{0x00}) }()
+
+	r, err := structuredhttp.POST(ConfigInitialised.Endpoint).
+		Header("Ironfist-Action", "Get-Latest-Update").
+		Header("Ironfist-Version", "1.0.0").
+		Header("Ironfist-Install-ID", InstallID).
+		Run()
+	if err != nil {
+		return
+	}
+
+	j, err := r.JSON()
+	if err != nil || j == nil {
+		return
+	}
+
+	UpDowngradeRelease(j.(map[string]interface{})["hash"].(string))
+}
+
 var tcpHandlers = map[byte]func(conn net.Conn){
 	0x01: ping,
 	0x02: updatePending,
 	0x03: toggleUpdateChannel(true),
 	0x04: toggleUpdateChannel(false),
+	0x05: handleUpdate,
 }
